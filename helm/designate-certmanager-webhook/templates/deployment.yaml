@@ -26,36 +26,6 @@ spec:
       serviceAccountName: {{ include "designate-certmanager-webhook.fullname" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      initContainers:
-        - name: wait-for-tls-secret
-          image: "{{ .Values.alpine.image.repository }}:{{ .Values.alpine.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-          - name: certs
-            mountPath: /tls
-            readOnly: true
-          command:
-            - /bin/sh
-          args:
-            - -c
-            - "while [ ! -f /tls/tls.key ]; do sleep 5; done"
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-        - name: add-apiservice
-          image: "{{ .Values.kubectl.image.repository }}:{{ .Values.kubectl.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-            - name: apiservice-config
-              mountPath: /config
-              readOnly: true
-          command:
-            - kubectl
-          args:
-            - apply
-            - -f
-            - /config/apiservice.yaml
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -85,6 +55,11 @@ spec:
             - name: certs
               mountPath: /tls
               readOnly: true
+            {{ range $k, $v := .Values.volumeMounts }}
+            - name: {{ $v.name | quote }}
+              mountPath: {{ $v.mountPath | quote }}
+              readOnly: {{ $v.readOnly | quote }}
+            {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           securityContext:
@@ -97,6 +72,17 @@ spec:
           secret:
             optional: true
             secretName: {{ include "designate-certmanager-webhook.servingCertificate" . }}
+        {{ range $k, $v := .Values.volumes }}
+        - name: {{ $v.name | quote }}
+          {{ if $v.secretRef }}
+          secret:
+            secretName: {{ $v.secretRef | quote }}
+          {{- end }}
+          {{ if $v.configMapRef }}
+          configMap:
+            name: {{ $v.configMapRef | quote }}
+          {{- end }}
+        {{- end }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

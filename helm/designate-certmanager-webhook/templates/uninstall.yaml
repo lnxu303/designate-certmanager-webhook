@@ -26,7 +26,7 @@ spec:
             - delete
             - --ignore-not-found
             - apiservice
-            - v1alpha1.acme.syseleven.de
+            - v1alpha1.{{ .Values.groupName }}
 ---
 # Grant cert-manager permission to validate using our apiserver
 apiVersion: rbac.authorization.k8s.io/v1
@@ -43,7 +43,7 @@ metadata:
     "helm.sh/hook-delete-policy": hook-succeeded
 rules:
   - apiGroups:
-      - acme.syseleven.de
+      - {{ .Values.groupName }}
     resources:
       - '*'
     verbs:

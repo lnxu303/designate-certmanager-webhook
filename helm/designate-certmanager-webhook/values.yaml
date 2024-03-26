@@ -4,19 +4,12 @@ certManager:
   namespace: ~
   serviceAccountName: cert-manager
 
-image:
-  repository: syseleven/designate-certmanager-webhook
-  tag: 0.2.18
-  pullPolicy: IfNotPresent
+groupName: acme.syseleven.de
 
-alpine:
-  image:
-    repository: alpine
-    tag: latest
-kubectl:
-  image:
-    repository: bitnami/kubectl
-    tag: latest
+image:
+  repository: fred78290/designate-certmanager-webhook
+  tag: 0.1.0
+  pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 
@@ -71,3 +64,11 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+## specify additional volumes to mount in the manager container, this can be used
+## to specify additional storage of material or to inject files from ConfigMaps
+## into the running container
+volumes: []
+
+## specify where the additional volumes are mounted in the manager container
+volumeMounts: []
