@@ -1,0 +1,28 @@
+{
+	// Utilisez IntelliSense pour en savoir plus sur les attributs possibles.
+	// Pointez pour afficher la description des attributs existants.
+	// Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+        {
+            "name": "Test designate-certmanager-webhook",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}",
+            "preLaunchTask": "kubebuilder",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "TEST_ASSET_ETCD": "_test/kubebuilder/bin/etcd",
+                "TEST_ASSET_KUBE_APISERVER": "_test/kubebuilder/bin/kube-apiserver",
+                "TEST_ASSET_KUBECTL": "_test/kubebuilder/bin/kubectl",
+                "TEST_MANIFEST_PATH": "_test/kubebuilder/designate",
+                "GROUP_NAME": "acme.syseleven.de"
+            },
+            "args": [
+                "-test.run",
+                "^TestRunsSuite$"
+            ]
+        }
+	]
+}

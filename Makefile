@@ -8,7 +8,7 @@ VERSION_MAJOR ?= 0
 VERSION_MINOR ?= 1
 VERSION_BUILD ?= 0
 TAG?=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_BUILD)
-KUBE_VERSION=1.27.1
+KUBE_VERSION=1.29.1
 FLAGS=
 ENVVAR=
 GOOS?=$(shell go env GOOS)
@@ -21,7 +21,7 @@ IMAGE=$(REGISTRY)/designate-certmanager-webhook
 export TEST_ASSET_ETCD=_test/kubebuilder/bin/etcd
 export TEST_ASSET_KUBE_APISERVER=_test/kubebuilder/bin/kube-apiserver
 export TEST_ASSET_KUBECTL=_test/kubebuilder/bin/kubectl
-export TEST_MANIFEST_PATH=_test/kubebuilder/godaddy
+export TEST_MANIFEST_PATH=_test/kubebuilder/designate
 
 test: _test/kubebuilder
 	go test -v .

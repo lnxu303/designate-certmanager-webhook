@@ -4,8 +4,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/joho/godotenv"
+
 	dns "github.com/cert-manager/cert-manager/test/acme"
 )
+
+func init() {
+	godotenv.Overload(".env")
+}
 
 func TestRunsSuite(t *testing.T) {
 	var zone string
@@ -22,7 +28,7 @@ func TestRunsSuite(t *testing.T) {
 	}
 
 	if manifest, found = os.LookupEnv("TEST_MANIFEST_PATH"); found == false {
-		manifest = "testdata/my-custom-solver"
+		manifest = "testdata/designate"
 	}
 
 	// The manifest path should contain a file named config.json that is a
