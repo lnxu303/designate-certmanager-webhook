@@ -1,6 +1,29 @@
+<p align="center">
+  <img src="./images/cert-manager-designate.svg" height="256" width="256" alt="designate-certmanager-webhook project logo" />
+</p>
+
+<p align="center">
+<a href="https://github.com/Fred78290/designate-certmanager-webhook/actions/workflows/ci.yaml">
+  <img alt="Build Status" src="https://github.com/Fred78290/designate-certmanager-webhook/actions/workflows/ci.yaml/badge.svg?branch=master">
+</a>
+<a href="https://sonarcloud.io/dashboard?id=Fred78290_cert-manager-webhook-godaddy">
+  <img alt="Quality Gate Status" src="https://sonarcloud.io/api/project_badges/measure?project=Fred78290_designate-certmanager-webhook&metric=alert_status">
+</a>
+<a href="https://github.com/Fred78290/designate-certmanager-webhook/blob/master/LICENSE">
+  <img alt="Licence" src="https://img.shields.io/hexpm/l/plug.svg">
+</a>
+</p>
+
 # ACME webhook Implementation for OpenStack Designate
 
 This is an ACME webhook implementation for the [cert-manager](http://docs.cert-manager.io). It works with OpenStack Designate DNSaaS to generate certificates using DNS-01 challenges.
+
+## Installation
+
+```bash
+helm repo add designate-certmanager https://fred78290.github.io/designate-certmanager-webhook/
+helm repo update
+````
 
 ## Prerequisites
 
@@ -8,38 +31,58 @@ To use this chart [Helm](https://helm.sh/) must be installed in your Kubernetes 
 
 ## Deployment
 
-***Optional*** You can choose to pre-create your authentication secret or configure the values via helm. If you don't want to configure your credentials via helm, create a kubernetes secret in the cert-manager namespace (or where you have deployed cert-manager, with the SysEleven addon it is _syseleven-cert-manager_) containing your OpenStack credentials and the project ID with the DNS zone you would like to use:
+***Optional*** You can choose to pre-create your authentication secret or configure the values via helm. If you don\'t want to configure your credentials via helm, create a kubernetes secret in the cert-manager namespace containing your OpenStack credentials and the project ID with the DNS zone you would like to use:
+
+### OpenStack Application Credentials
+
+/etc/openstack/clouds.yaml or ~/.config/openstak/clouds.yaml is also supported
 
 ### Secret with OpenStack User Credentials
 
-```
+```bash
 kubectl --namespace cert-manager create secret generic cloud-credentials \
-  --from-literal=OS_AUTH_URL=<OpenStack Authentication URL> \
-  --from-literal=OS_DOMAIN_NAME=<OpenStack Domain> \
-  --from-literal=OS_REGION_NAME=<OpenStack Region> \
-  --from-literal=OS_PROJECT_ID=<OpenStack Project ID> \
-  --from-literal=OS_USERNAME=<OpenStack Username> \
-  --from-literal=OS_PASSWORD=<OpenStack Password>
+  --from-literal=OS_AUTH_URL=${OS_AUTH_URL} \
+  --from-literal=OS_DOMAIN_NAME=${OS_DOMAIN_NAME} \
+  --from-literal=OS_REGION_NAME=${OS_REGION_NAME}> \
+  --from-literal=OS_PROJECT_ID=${OS_PROJECT_ID} \
+  --from-literal=OS_PROJECT_NAME=${OS_PROJECT_NAME} \
+  --from-literal=OS_USERNAME=${OS_USERNAME} \
+  --from-literal=OS_PASSWORD=${OS_PASSWORD}
 ```
 
 ### Secret with OpenStack Application Credentials
 
-```
+```bash
 kubectl --namespace cert-manager create secret generic cloud-credentials \
-  --from-literal=OS_AUTH_URL=<OpenStack Authentication URL> \
-  --from-literal=OS_DOMAIN_NAME=<OpenStack Domain> \
-  --from-literal=OS_REGION_NAME=<OpenStack Region> \
-  --from-literal=OS_APPLICATION_CREDENTIAL_ID=<OpenStack Application Credential ID> \
-  --from-literal=OS_APPLICATION_CREDENTIAL_NAME=<OpenStack Application Credential name> \
-  --from-literal=OS_APPLICATION_CREDENTIAL_SECRET=<OpenStack Application Credential Secret value>
+  --from-literal=OS_AUTH_URL=${OS_AUTH_URL} \
+  --from-literal=OS_DOMAIN_NAME=${OS_DOMAIN_NAME} \
+  --from-literal=OS_REGION_NAME=${OS_REGION_NAME} \
+  --from-literal=OS_APPLICATION_CREDENTIAL_ID=${OS_APPLICATION_CREDENTIAL_ID} \
+  --from-literal=OS_APPLICATION_CREDENTIAL_NAME=${OS_APPLICATION_CREDENTIAL_NAME} \
+  --from-literal=OS_APPLICATION_CREDENTIAL_SECRET=${OS_APPLICATION_CREDENTIAL_SECRET}
 ```
 
 ### Chart deployment
 
-For now, we do not host a chart repository. To use this chart, you must clone this repository. Edit the values.yaml file and add your OpenStack settings if you did not create the secret before. Then you can install the helm chart with the command:
+You can install the helm chart with the command:
 
-```
+```bash
 helm install --name designate-certmanager --namespace=cert-manager designate-certmanager-webhook
+helm upgrade -i designate-certmanager designate-certmanager-webhook/designate-certmanager \
+    --set groupName=acme.mycompany.com \
+    --set image.tag=v0.1.0 \
+    --set image.pullPolicy=Always \
+    --set openstack.username="${OS_USERNAME}" \
+    --set openstack.password="${OS_PASSWORD}" \
+    --set openstack.application_credential_id="${OS_APPLICATION_CREDENTIAL_ID}" \
+    --set openstack.application_credential_secret="${OS_APPLICATION_CREDENTIAL_NAME}" \
+    --set openstack.project_id="${OS_PROJECT_ID}" \
+    --set openstack.project_name="${OS_PROJECT_NAME}" \
+    --set openstack.region_name="${OS_REGION_NAME}" \
+    --set openstack.auth_url="${OS_AUTH_URL}" \
+    --set openstack.domain_name="${OS_DOMAIN_NAME}" \
+    --namespace cert-manager
+
 ```
 
 ## Configuration
@@ -65,8 +108,11 @@ spec:
     solvers:
     - dns01:
         webhook:
-          groupName: acme.syseleven.de
-          solverName: designatedns
+          config:
+            verify: false
+            ttl: 600
+          groupName: acme.mycompany.com
+          solverName: designateDNS
 ```
 
 You are now ready to create you first certificate resource. The easiest way to accomplish this is to add an annotation to an Ingress rule. Please adapt this example for your own needs:
@@ -96,3 +142,30 @@ spec:
     - my.ingress.com
     secretName: myingress-cert
 ```
+
+## Development
+
+### Running the test suite
+
+All DNS providers **must** run the DNS01 provider conformance testing suite,
+else they will have undetermined behaviour when used with cert-manager.
+
+**It is essential that you configure and run the test suite when creating a
+DNS01 webhook.**
+
+An example Go test file has been provided in [main_test.go]().
+
+> Prepare
+
+```bash
+$ scripts/fetch-test-binaries.sh
+```
+
+You can run the test suite with:
+
+```bash
+$ scripts/test.sh
+```
+
+The example file has a number of areas you must fill in and replace with your
+own options in order for tests to pass.

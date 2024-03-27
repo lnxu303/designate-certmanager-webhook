@@ -5,3 +5,5 @@ testcertificate.yaml
 /_test
 /out
 .env
+
+.secrets

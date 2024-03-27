@@ -10,25 +10,26 @@ on:
 env:
   OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
   OS_USERNAME: ${{ secrets.OS_USERNAME }}
-  OS_USERID: ${{ secrets.OS_USERID }}
   OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
-  OS_PASSCODE: ${{ secrets.OS_PASSCODE }}
-  OS_TENANT_ID: ${{ secrets.OS_TENANT_ID }}
-  OS_TENANT_NAME: ${{ secrets.OS_TENANT_NAME }}
   OS_DOMAIN_ID: ${{ secrets.OS_DOMAIN_ID }}
   OS_DOMAIN_NAME: ${{ secrets.OS_DOMAIN_NAME }}
   OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
   OS_APPLICATION_CREDENTIAL_NAME: ${{ secrets.OS_APPLICATION_CREDENTIAL_NAME }}
   OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-  OS_PROJECT_ID: ${{ secrets.OS_PROJECT_ID }}
   OS_PROJECT_NAME: ${{ secrets.OS_PROJECT_NAME }}
+  OS_CLOUD: ${{ secrets.OS_CLOUD }}
   TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
+  REGISTRY: ${{ secrets.REGISTRY }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      REGISTRY: ${{ secrets.REGISTRY }}
+    outputs:
+      run_test: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,7 +63,11 @@ jobs:
       # Directory created with a docker run having user root
       - name: Fix directory owner
         shell: bash
-        run: sudo chown -R $USER out vendor
+        run: |
+          ls -l
+          if [ -d out ] && [ -d vendor ]; then
+            sudo chown -R $USER out vendor
+          fi
       - name: Output
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
@@ -70,8 +75,12 @@ jobs:
           name: binaries
           path: out
           if-no-files-found: error
+      - name: active test
+        if: "${{ env.OS_AUTH_URL != '' }}"
+        run: echo "run_test=true" >> "$GITHUB_OUTPUT"
+
   test:
-    if: ${{ env.OS_AUTH_URL != '' }}
+    if: needs.build.outputs.run_test == 'true'
     name: Test
     runs-on: ubuntu-latest
     needs: build
@@ -106,7 +115,12 @@ jobs:
         run: ./scripts/test.sh
       - name: Fix directory owner
         shell: bash
-        run: sudo chown -R $USER vendor
+        run: |
+          ls -l
+          if [ -d vendor ]; then
+            sudo chown -R $USER vendor
+          fi
+
   sonarcloud:
     if: startsWith(github.ref, 'refs/heads/')
     name: SonarCloud
@@ -118,9 +132,6 @@ jobs:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # Directory created with a docker run having user root
       - name: Prepare SonarCloud
         shell: bash
@@ -130,8 +141,6 @@ jobs:
     needs: build
     name: Deploy
     runs-on: ubuntu-latest
-    env:
-      REGISTRY: ${{ secrets.REGISTRY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -161,7 +170,7 @@ jobs:
         shell: bash
         run: |
           docker buildx version;
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin;
+          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin;
           docker buildx create --use
       - name: Build docker image
         shell: bash
@@ -180,5 +189,3 @@ jobs:
           files: |
             designate-certmanager-webhook-amd64
             designate-certmanager-webhook-arm64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # You don't need to add this in secrets it's by default.      

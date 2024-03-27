@@ -24,6 +24,7 @@ openstack:
   username: ""
   password: ""
   application_credential_id: ""
+  application_credential_name: ""
   application_credential_secret: ""
   project_id: ""
   project_name: "" # Use project_id OR project_name
