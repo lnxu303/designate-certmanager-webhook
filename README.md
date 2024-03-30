@@ -6,7 +6,7 @@
 <a href="https://github.com/Fred78290/designate-certmanager-webhook/actions/workflows/ci.yaml">
   <img alt="Build Status" src="https://github.com/Fred78290/designate-certmanager-webhook/actions/workflows/ci.yaml/badge.svg?branch=master">
 </a>
-<a href="https://sonarcloud.io/dashboard?id=Fred78290_cert-manager-webhook-godaddy">
+<a href="https://sonarcloud.io/dashboard?id=Fred78290_designate-certmanager-webhook">
   <img alt="Quality Gate Status" src="https://sonarcloud.io/api/project_badges/measure?project=Fred78290_designate-certmanager-webhook&metric=alert_status">
 </a>
 <a href="https://github.com/Fred78290/designate-certmanager-webhook/blob/master/LICENSE">
@@ -17,6 +17,8 @@
 # ACME webhook Implementation for OpenStack Designate
 
 This is an ACME webhook implementation for the [cert-manager](http://docs.cert-manager.io). It works with OpenStack Designate DNSaaS to generate certificates using DNS-01 challenges.
+
+It's a rewrite of code [designate-certmanager-webhook](https://github.com/syseleven/designate-certmanager-webhook) with test integration and helm chart.
 
 ## Installation
 
