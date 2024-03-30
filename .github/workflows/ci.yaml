@@ -101,6 +101,7 @@ jobs:
         shell: bash
         run: |
           pushd compose
+          docker compose version
           docker compose up -d
           popd
       - name: fetch hack
