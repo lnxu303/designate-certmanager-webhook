@@ -20,6 +20,11 @@ This is an ACME webhook implementation for the [cert-manager](http://docs.cert-m
 
 It's a rewrite of code [designate-certmanager-webhook](https://github.com/syseleven/designate-certmanager-webhook) with test integration and helm chart.
 
+## Built for version
+
+- cert-manager: 1.14.4
+- kubernetes: 1.29.3
+
 ## Installation
 
 ```bash
