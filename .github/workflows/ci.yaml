@@ -8,22 +8,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 env:
-  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
-  OS_USERNAME: ${{ secrets.OS_USERNAME }}
-  OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
-  OS_DOMAIN_ID: ${{ secrets.OS_DOMAIN_ID }}
-  OS_DOMAIN_NAME: ${{ secrets.OS_DOMAIN_NAME }}
-  OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-  OS_APPLICATION_CREDENTIAL_NAME: ${{ secrets.OS_APPLICATION_CREDENTIAL_NAME }}
-  OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT_NAME }}
-  OS_CLOUD: ${{ secrets.OS_CLOUD }}
-  TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
   REGISTRY: ${{ secrets.REGISTRY }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
 jobs:
   build:
     name: Build
@@ -75,18 +65,27 @@ jobs:
           name: binaries
           path: out
           if-no-files-found: error
-      - name: active test
-        if: "${{ env.OS_AUTH_URL != '' }}"
-        run: echo "run_test=true" >> "$GITHUB_OUTPUT"
 
   test:
-    if: needs.build.outputs.run_test == 'true'
     name: Test
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name:  Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+      - name: Cache vendor
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-vendor
+        with:
+          path: vendor
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
       - name: Prepare
         id: prep
         run: |
@@ -98,19 +97,28 @@ jobs:
           fi
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Build with tag=${TAG}"
-      - name: Cache vendor
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-vendor
-        with:
-          path: vendor
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('go.mod') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
+      - name: docker compose
+        shell: bash
+        run: |
+          pushd compose
+          docker compose up -d
+          popd
       - name: fetch hack
         shell: bash
         run: ./scripts/fetch-test-binaries.sh
       - name: test
+        env:
+          OS_PROJECT_DOMAIN_NAME: Default
+          OS_USER_DOMAIN_NAME: Default
+          OS_PROJECT_NAME: admin
+          OS_USERNAME: admin
+          OS_PASSWORD: password
+          OS_AUTH_URL: http://127.0.01:5000/v3/
+          OS_IDENTITY_API_VERSION: 3
+          OS_IMAGE_API_VERSION: 2
+          OS_CLOUD: designate
+          TEST_ZONE_NAME: example.com
+          TEST_DNS_SERVER: 127.0.0.1:1053
         shell: bash
         run: ./scripts/test.sh
       - name: Fix directory owner
@@ -120,6 +128,12 @@ jobs:
           if [ -d vendor ]; then
             sudo chown -R $USER vendor
           fi
+      - name: Stop containers
+        if: always()
+        run: |
+          pushd compose
+          docker compose down
+          popd
 
   sonarcloud:
     if: startsWith(github.ref, 'refs/heads/')
@@ -131,14 +145,15 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarcloud-github-action@v2.1.1
       # Directory created with a docker run having user root
       - name: Prepare SonarCloud
         shell: bash
         run: sudo chown -R $USER .scannerwork
+
   deploy:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: test
     name: Deploy
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,45 @@
+include "/etc/bind/rndc.key";
+
+options {
+	directory "/var/cache/bind";
+
+	// If there is a firewall between you and nameservers you want
+	// to talk to, you may need to fix the firewall to allow multiple
+	// ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+	// If your ISP provided one or more IP addresses for stable 
+	// nameservers, you probably want to use them as forwarders.  
+	// Uncomment the following block, and insert the addresses replacing 
+	// the all-0's placeholder.
+
+	// Set the IP addresses of your ISP's DNS servers:
+	forwarders {
+		8.8.8.8;
+	};
+
+	//========================================================================
+	// If BIND logs error messages about the root key being expired,
+	// you will need to update your keys.  See https://www.isc.org/bind-keys
+	//========================================================================
+	dnssec-validation auto;
+
+	allow-new-zones yes;
+	request-ixfr no;
+	listen-on port 53 { any; };
+	recursion yes;
+	allow-recursion { any; };
+	allow-transfer { any; };
+	allow-query { any; };
+};
+
+controls {
+	inet 0.0.0.0 port 953 allow { any; } keys { "rndc-key"; };
+};
+
+logging {
+	channel querylog {
+		file "/var/log/named/query.log" versions unlimited size 10m;
+		severity debug 3;
+	};
+};
+

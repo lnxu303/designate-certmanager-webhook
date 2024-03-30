@@ -1,0 +1,123 @@
+services:
+  named:
+    image: fred78290/ubuntu-bind9
+    container_name: named
+    hostname: named
+    healthcheck:
+      test: [ "CMD", "usr/local/bin/health-check.sh" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    ports:
+      - 1053:53/udp
+      - 1053:53/tcp
+      - 953:953
+      - 5354:5354
+    networks:
+      - local
+
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    hostname: mariadb
+    env_file:
+      - path: ./test.env
+        required: true
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      retries: 3
+      timeout: 30s
+      start_period: 5s
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mariadb:/docker-entrypoint-initdb.d
+    networks:
+      - local
+  
+  rabbitmq:
+    image: rabbitmq
+    container_name: rabbitmq
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: keystone
+      RABBITMQ_DEFAULT_PASS: password
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    ports:
+      - 5672:5672
+    volumes:
+      - ./rabbitmq:/docker-entrypoint-initdb.d
+    networks:
+      - local
+
+  keystone:
+    image: fred78290/ubuntu-keystone
+    container_name: keystone
+    hostname: keystone
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    env_file:
+      - path: test.env
+        required: true
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "http://localhost:5000/v3/" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    ports:
+      - 5000:5000
+    networks:
+      - local
+
+  designate:
+    image: fred78290/ubuntu-designate
+    container_name: designate
+    hostname: designate
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keystone:
+        condition: service_healthy
+      named:
+        condition: service_healthy
+    env_file:
+      - path: test.env
+        required: true
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "http://localhost:9001/" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    ports:
+      - 9001:9001
+    networks:
+      - local
+
+  openstack-client:
+    image: fred78290/openstack-client
+    container_name: openstack-client
+    hostname: openstack-client
+    depends_on:
+      designate:
+        condition: service_healthy
+    env_file:
+      - path: test.env
+        required: true
+    command: [ "openstack", "zone", "create", "--email", "dnsmaster@example.com", "example.com." ]
+    networks:
+      - local
+
+networks:
+  local:

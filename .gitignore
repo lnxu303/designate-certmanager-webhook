@@ -7,3 +7,4 @@ testcertificate.yaml
 .env
 
 .secrets
+*.key

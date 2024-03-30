@@ -1,0 +1,3 @@
+
+CREATE DATABASE IF NOT EXISTS designate CHARACTER SET utf8 COLLATE utf8_general_ci;
+GRANT ALL PRIVILEGES ON *.* TO 'keystone'@'%';
