@@ -21,9 +21,7 @@ services:
     image: mariadb
     container_name: mariadb
     hostname: mariadb
-    env_file:
-      - path: ./test.env
-        required: true
+    env_file: ./test.env
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
       interval: 10s
@@ -64,9 +62,7 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-    env_file:
-      - path: test.env
-        required: true
+    env_file: ./test.env
     healthcheck:
       test: [ "CMD", "wget", "-q", "http://localhost:5000/v3/" ]
       interval: 10s
@@ -91,9 +87,7 @@ services:
         condition: service_healthy
       named:
         condition: service_healthy
-    env_file:
-      - path: test.env
-        required: true
+    env_file: ./test.env
     healthcheck:
       test: [ "CMD", "wget", "-q", "http://localhost:9001/" ]
       interval: 10s
@@ -112,9 +106,7 @@ services:
     depends_on:
       designate:
         condition: service_healthy
-    env_file:
-      - path: test.env
-        required: true
+    env_file: ./test.env
     command: [ "openstack", "zone", "create", "--email", "dnsmaster@example.com", "example.com." ]
     networks:
       - local
