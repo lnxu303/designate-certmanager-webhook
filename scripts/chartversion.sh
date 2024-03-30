@@ -3,7 +3,7 @@ TAG=${GITHUB_REF#refs/tags/v}
 
 cat > helm/designate-certmanager-webhook/Chart.yaml <<EOF
 apiVersion: v2
-appVersion: "1.0.0"
+appVersion: "${TAG}"
 description: A Helm chart to install designate-certmanager-webhook
 name: designate-certmanager
 version: "${TAG}"
