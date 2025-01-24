@@ -8,11 +8,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 env:
-  REGISTRY: ${{ secrets.REGISTRY }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  REGISTRY: ghcr.io
+  # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+  # SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  # DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  # DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
   build:
@@ -186,7 +186,7 @@ jobs:
         shell: bash
         run: |
           docker buildx version;
-          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin;
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin;
           docker buildx create --use
       - name: Build docker image
         shell: bash
