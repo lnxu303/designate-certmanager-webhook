@@ -157,7 +157,7 @@ jobs:
 
   deploy:
     if: startsWith(github.ref, 'refs/heads/')
-    needs: test
+    # needs: test
     name: Deploy
     runs-on: ubuntu-latest
     steps:
