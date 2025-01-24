@@ -9,6 +9,7 @@ on:
     types: [opened, synchronize, reopened]
 env:
   REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
   # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
   # SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   # DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -191,7 +192,7 @@ jobs:
       - name: Build docker image
         shell: bash
         run: |
-          make -e REGISTRY=$REGISTRY -e TAG="${{ steps.prep.outputs.tag }}" push-manifest
+          make -e REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} -e TAG="${{ steps.prep.outputs.tag }}" push-manifest
       - name: Prepare Release
         shell: bash
         run: |
