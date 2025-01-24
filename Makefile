@@ -65,8 +65,8 @@ docker-builder:
 build-in-docker: $(addprefix build-in-docker-arch-,$(ALL_ARCH))
 
 build-in-docker-arch-%: clean-arch-% docker-builder
-	docker run --rm -v `pwd`:/gopath/src/github.com/Fred78290/designate-certmanager-webhook/ designate-certmanager-webhook-builder:latest bash \
-		-c 'cd /gopath/src/github.com/Fred78290/designate-certmanager-webhook  \
+	docker run --rm -v `pwd`:/gopath/src/github.com/lnxu303/designate-certmanager-webhook/ designate-certmanager-webhook-builder:latest bash \
+		-c 'cd /gopath/src/github.com/lnxu303/designate-certmanager-webhook  \
 		&& BUILD_TAGS=${BUILD_TAGS} make -e REGISTRY=${REGISTRY} -e TAG=${TAG} -e BUILD_DATE=`date +%Y-%m-%dT%H:%M:%SZ` build-arch-$*'
 
 container: $(addprefix container-arch-,$(ALL_ARCH))
