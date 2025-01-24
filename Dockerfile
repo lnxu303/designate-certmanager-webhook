@@ -25,7 +25,7 @@ RUN mv /$TARGETPLATFORM/designate-certmanager-webhook /designate-certmanager-web
 
 FROM ubuntu:jammy
 
-LABEL maintainer="Frederic Boltz <frederic.boltz@gmail.com>"
+LABEL maintainer="Florian Raeder <fraeder@wavecon.de>"
 
 COPY --from=builder /etc/ssl /etc/ssl
 COPY --from=builder /designate-certmanager-webhook /usr/local/bin/designate-certmanager-webhook
