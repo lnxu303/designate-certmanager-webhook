@@ -37,6 +37,9 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.credentialsSecret }}
+          env:
+            - name: GROUP_NAME
+              value: {{ .Values.groupName }}
           ports:
             - name: https
               containerPort: 8443

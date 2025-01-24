@@ -90,7 +90,7 @@ func (c *designateDNSProviderSolver) loadConfig(cfgJSON *extapi.JSON) (err error
 }
 
 func (c *designateDNSProviderSolver) Name() string {
-	return "designateDNS"
+	return "designate-dns"
 }
 
 func (c *designateDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) (err error) {
